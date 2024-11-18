@@ -1,0 +1,41 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Configurar el entorno
+      - name: Checkea el repositorio
+        uses: actions/checkout@v4
+
+      # Configurar Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      # Instalar dependencias
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      # Ejecutar el linter Ruff
+      - name: Run Ruff Linter
+        run: |
+          source .venv/bin/activate
+          ruff check .
+
+      # Ejecutar pruebas con pytest
+      - name: Run Pytest
+        run: |
+          source .venv/bin/activate
+          pytest -v -p no:warnings
