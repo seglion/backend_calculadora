@@ -84,6 +84,7 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+          
   Crear-Docker-imagen-Push-GITHUB: # Se  podria hacer en un solo Jobo, pero el ejercion pide por separado en dockerhub y en github
     name: Crear Docker imagen y push a github
     runs-on: ubuntu-latest  
@@ -96,7 +97,8 @@ jobs:
       id-token: write
     env:
       REGISTRY: ghcr.io/seglion  
-      IMAGE_NAME: backend_calculadora
+      IMAGE_NAME: ${{ github.repository }}
+    
     steps:
 
       - name: Check out the repo
@@ -105,24 +107,40 @@ jobs:
 
     # Log in al registro de GitHub Packages
       - name: Log in to GitHub Docker Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
 
-      # Construir la imagen Docker
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
-            
-      # Pushear la imagen Docker al registro de GitHub Packages
-      - name: Push Docker Image
-        id: docker_push
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
-       
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+
+
+      
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      
 
       
 
