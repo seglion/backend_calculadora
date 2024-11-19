@@ -120,12 +120,12 @@ jobs:
         run: |
           docker push ghcr.io/${{ github.repository }}/backend_calculadora:latest
        
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}
+      - name: Get Docker Image Digest
+        id: get_digest
+        run: |
+          IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/backend_calculadora:latest)
+          echo "digest=${IMAGE_DIGEST##*@}" >> $GITHUB_ENV
+          echo "::set-output name=digest::${IMAGE_DIGEST##*@}"
       
       
       - name: Generate artifact attestation
