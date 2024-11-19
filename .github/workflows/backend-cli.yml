@@ -39,7 +39,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pytest -v -p no:warnings
-  Crear-Docker-imagen:
+  Crear-Docker-imagen-Push-DOCKERHUB: # Se  podria hacer en un solo Jobo, pero el ejercion pide por separado en dockerhub y en github
     name: Crear Docker imagen
     runs-on: ubuntu-latest  
     needs: Test-y-Linter
@@ -49,7 +49,7 @@ jobs:
       attestations: write
       id-token: write
     env:
-      REGISTRY: docker.io/seglion  # Ejemplo de Docker Hub
+      REGISTRY: docker.io/seglion  
       IMAGE_NAME: pythonback
     steps:
 
@@ -84,8 +84,48 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+  Crear-Docker-imagen-Push-GITHUB: # Se  podria hacer en un solo Jobo, pero el ejercion pide por separado en dockerhub y en github
+    name: Crear Docker imagen y push a github
+    runs-on: ubuntu-latest  
+    needs: Crear-Docker-imagen-Push-DOCKERHUB
+    permissions:
 
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    env:
+      REGISTRY: docker.io/seglion  
+      IMAGE_NAME: pythonback
+    steps:
 
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      # Log in al registro de GitHub Packages
+
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v2
+        with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GH_TOKEN }}
+
+      # Construir la imagen Docker
+      - name: Build Docker Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/backend_calculadora:latest .
+            # Pushear la imagen Docker al registro de GitHub Packages
+            
+      - name: Push Docker Image
+        run: |
+          docker push ghcr.io/${{ github.repository }}/backend_calculadora:latest
+          
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
 
 
