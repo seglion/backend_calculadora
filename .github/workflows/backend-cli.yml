@@ -121,7 +121,7 @@ jobs:
       - name: Push Docker Image
         id: docker_push
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
        
       - name: Get Docker Image Digest
         id: get_digest
