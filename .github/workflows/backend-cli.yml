@@ -48,6 +48,9 @@ jobs:
       contents: read
       attestations: write
       id-token: write
+    env:
+      REGISTRY: docker.io/seglion  # Ejemplo de Docker Hub
+      IMAGE_NAME: pythonback
     steps:
 
       - name: Check out the repo
