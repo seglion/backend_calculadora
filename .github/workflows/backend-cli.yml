@@ -95,35 +95,38 @@ jobs:
       attestations: write
       id-token: write
     env:
-      REGISTRY: docker.io/seglion  
-      IMAGE_NAME: pythonback
+      REGISTRY: ghcr.io/seglion  
+      IMAGE_NAME: backend_calculadora
     steps:
 
       - name: Check out the repo
         uses: actions/checkout@v4
-      # Log in al registro de GitHub Packages
 
+
+    # Log in al registro de GitHub Packages
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v2
         with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GH_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
 
       # Construir la imagen Docker
       - name: Build Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/backend_calculadora:latest .
-            # Pushear la imagen Docker al registro de GitHub Packages
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
             
+      # Pushear la imagen Docker al registro de GitHub Packages
       - name: Push Docker Image
+        id: docker_push
         run: |
-          docker push ghcr.io/${{ github.repository }}/backend_calculadora:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
        
       - name: Get Docker Image Digest
         id: get_digest
         run: |
-          IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/backend_calculadora:latest)
+          IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest)
           echo "digest=${IMAGE_DIGEST##*@}" >> $GITHUB_ENV
           echo "::set-output name=digest::${IMAGE_DIGEST##*@}"
       
@@ -131,7 +134,7 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ghcr.io/${{ github.repository }}/backend_calculadora:latest
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           subject-digest: ${{ steps.get_digest.outputs.digest }}
           push-to-registry: true
 
